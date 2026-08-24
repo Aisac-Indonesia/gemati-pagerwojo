@@ -18,7 +18,8 @@
     "db:generate:mysql": "drizzle-kit generate --config=drizzle.mysql.config.ts",
     "db:migrate:mysql": "drizzle-kit migrate --config=drizzle.mysql.config.ts",
     "db:push:mysql": "drizzle-kit push --config=drizzle.mysql.config.ts",
-    "db:seed": "tsx --env-file=.env src/db/seed.ts"
+    "db:seed": "tsx --env-file=.env src/db/seed.ts",
+    "db:seed:clean": "tsx --env-file=.env src/db/seed-clean.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
