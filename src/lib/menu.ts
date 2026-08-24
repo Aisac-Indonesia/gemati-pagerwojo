@@ -15,6 +15,7 @@ import {
   BarChart3,
   History,
   Server,
+  HeartPulse,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export const MENU: Record<Role, MenuItem[]> = {
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Rekapitulasi", href: "/rekapitulasi", icon: ClipboardList },
     { label: "Data Desa", href: "/desa", icon: Building2 },
+    { label: "Data Posyandu", href: "/posyandu", icon: HeartPulse },
     { label: "Data Balita", href: "/balita", icon: Baby },
     { label: "Data Kader", href: "/kader", icon: Users },
     { label: "Data PPKBD", href: "/ppkbd", icon: ShieldCheck },

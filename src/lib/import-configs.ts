@@ -7,6 +7,10 @@ export const IMPORT_FIELDS: Record<string, ImportField[]> = {
     { key: "kecamatan", header: "Kecamatan", example: "Pagerwojo" },
     { key: "kabupaten", header: "Kabupaten", example: "Tulungagung" },
   ],
+  posyandu: [
+    { key: "nama", header: "Nama Posyandu", required: true, example: "Melati I" },
+    { key: "desa", header: "Desa", required: true, example: "Mulyosari" },
+  ],
   users: [
     { key: "nama", header: "Nama Lengkap", required: true, example: "Budi Santoso" },
     { key: "username", header: "Username", required: true, example: "kader.mulyosari03" },
