@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Users as UsersIcon, CheckCircle, XCircle, Building2, RotateCcw, Trash2, Pencil, Power, PowerOff, KeyRound } from "lucide-react";
 import { PageHeader, StatCard, SearchBar, Button, Field, Input, Select, Badge, Card, IconAction, RowActions } from "@/components/ui/primitives";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useBulkActions } from "@/components/ui/BulkActions";
 import { Drawer, TabsAktifSampah } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
@@ -72,6 +73,17 @@ export function UserManager({
       filterStatus === "all" || (filterStatus === "aktif" ? r.active : !r.active);
     const matchRole = filterRole === "all" || r.role === filterRole;
     return matchSearch && matchStatus && matchRole;
+  });
+
+  const bulk = useBulkActions({
+    entity: "users",
+    tab,
+    rows,
+    enabled: true,
+    canPurge: true,
+    onDone: reloadAll,
+    noun: role === "kader" ? "kader" : role === "ppkbd" ? "PPKBD" : "pengguna",
+    purgeWarning: "Akun yang masih tercatat sebagai kader di data balita/pendampingan/pengukuran akan dilewati.",
   });
 
   const entity = role ?? "users";
@@ -210,6 +222,9 @@ export function UserManager({
       cell: (r) => (
         <RowActions>
           <IconAction icon={RotateCcw} title="Pulihkan" tone="success" onClick={() => doRestore(r.id)} />
+          {true && (
+            <IconAction icon={Trash2} title="Hapus Permanen" tone="danger" onClick={() => bulk.purgeOne(r.id)} />
+          )}
         </RowActions>
       ),
     },
@@ -277,13 +292,17 @@ export function UserManager({
             <SearchBar value={search} onChange={setSearch} placeholder="Cari nama atau username..." />
           </div>
         </div>
+        {bulk.bar}
         <DataTable
+          selection={bulk.selection}
           columns={tab === "aktif" ? aktifColumns : sampahColumns}
           rows={rows}
           loading={loading}
           empty={tab === "aktif" ? "Belum ada pengguna" : "Sampah kosong"}
         />
       </Card>
+
+      {bulk.dialog}
 
       <Drawer
         open={drawerOpen}

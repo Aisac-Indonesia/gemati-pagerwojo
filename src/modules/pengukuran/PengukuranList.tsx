@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Ruler, Plus, RotateCcw, Pencil, Trash2 } from "lucide-react";
 import { PageHeader, Card, Badge, Button, SearchBar, Select, LABEL_VALIDASI, RowActions, IconAction } from "@/components/ui/primitives";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useBulkActions } from "@/components/ui/BulkActions";
 import { Drawer, TabsAktifSampah } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
@@ -118,6 +119,16 @@ export function PengukuranList({
     return matchSearch && matchValidasi;
   });
 
+  const bulk = useBulkActions({
+    entity: "pengukuran",
+    tab,
+    rows,
+    enabled: canEdit,
+    canPurge: role === "admin",
+    onDone: reloadAll,
+    noun: "data pengukuran",
+  });
+
   const baseColumns: Column<PengukuranRow>[] = [
     { header: "Tanggal", sortValue: (r) => r.tanggal, cell: (r) => <span className="whitespace-nowrap">{formatTanggal(r.tanggal)}</span> },
     {
@@ -181,6 +192,9 @@ export function PengukuranList({
       cell: (r) => (
         <RowActions>
           <IconAction icon={RotateCcw} title="Pulihkan" tone="success" onClick={() => doRestore(r.id)} />
+          {true && (
+            <IconAction icon={Trash2} title="Hapus Permanen" tone="danger" onClick={() => bulk.purgeOne(r.id)} />
+          )}
         </RowActions>
       ),
     },
@@ -234,13 +248,17 @@ export function PengukuranList({
             <SearchBar value={search} onChange={setSearch} placeholder="Cari balita..." />
           </div>
         </div>
+        {bulk.bar}
         <DataTable
+          selection={bulk.selection}
           columns={tab === "aktif" ? aktifColumns : sampahColumns}
           rows={rows}
           loading={loading}
           empty={tab === "aktif" ? "Belum ada data pengukuran" : "Sampah kosong"}
         />
       </Card>
+
+      {bulk.dialog}
 
       <Drawer
         open={drawerOpen}

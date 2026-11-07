@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Baby, Eye, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { PageHeader, SearchBar, Select, Button, Badge, Card, LABEL_VALIDASI, IconAction, RowActions } from "@/components/ui/primitives";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useBulkActions } from "@/components/ui/BulkActions";
 import { Drawer, TabsAktifSampah } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
@@ -141,6 +142,17 @@ export function BalitaList({
     return matchSearch && matchDesa && matchValidasi && matchStatus && matchJk;
   });
 
+  const bulk = useBulkActions({
+    entity: "balita",
+    tab,
+    rows,
+    enabled: canEdit,
+    canPurge: role === "admin",
+    onDone: reloadAll,
+    noun: "balita",
+    purgeWarning: "Semua data pendampingan dan pengukuran balita tersebut ikut terhapus permanen.",
+  });
+
   async function doDelete(id: number) {
     const res = await apiFetch(`/api/balita/${id}`, { method: "DELETE" });
     if (res.ok) {
@@ -222,6 +234,9 @@ export function BalitaList({
       cell: (r) => (
         <RowActions>
           <IconAction icon={RotateCcw} title="Pulihkan" tone="success" onClick={() => doRestore(r.id)} />
+          {role === "admin" && (
+            <IconAction icon={Trash2} title="Hapus Permanen" tone="danger" onClick={() => bulk.purgeOne(r.id)} />
+          )}
         </RowActions>
       ),
     },
@@ -303,13 +318,17 @@ export function BalitaList({
             <SearchBar value={search} onChange={setSearch} placeholder="Cari nama, NIK, atau nama ibu..." />
           </div>
         </div>
+        {bulk.bar}
         <DataTable
+          selection={bulk.selection}
           columns={tab === "aktif" ? aktifColumns : sampahColumns}
           rows={rows}
           loading={loading}
           empty={tab === "aktif" ? "Belum ada data balita" : "Sampah kosong"}
         />
       </Card>
+
+      {bulk.dialog}
 
       <Drawer
         open={drawerOpen}

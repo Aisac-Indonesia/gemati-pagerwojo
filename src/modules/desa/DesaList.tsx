@@ -25,6 +25,7 @@ import {
   RowActions,
 } from "@/components/ui/primitives";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useBulkActions } from "@/components/ui/BulkActions";
 import { Drawer, TabsAktifSampah } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
@@ -110,6 +111,17 @@ export function DesaList() {
   const trashRows = (trashData?.data || []).filter((d) => {
     const q = search.toLowerCase().trim();
     return !q || d.nama.toLowerCase().includes(q) || (d.kecamatan || "").toLowerCase().includes(q);
+  });
+
+  const bulk = useBulkActions({
+    entity: "desa",
+    tab,
+    rows: tab === "aktif" ? rows : trashRows,
+    enabled: true,
+    canPurge: true,
+    onDone: reloadAll,
+    noun: "desa",
+    purgeWarning: "Desa yang masih dipakai data balita, posyandu, atau pengguna akan dilewati.",
   });
 
   const totals = useMemo(() => {
@@ -261,6 +273,9 @@ export function DesaList() {
       cell: (d) => (
         <RowActions>
           <IconAction icon={RotateCcw} title="Pulihkan" tone="success" onClick={() => doRestore(d.id)} />
+          {true && (
+            <IconAction icon={Trash2} title="Hapus Permanen" tone="danger" onClick={() => bulk.purgeOne(d.id)} />
+          )}
         </RowActions>
       ),
     },
@@ -301,8 +316,10 @@ export function DesaList() {
           <TabsAktifSampah value={tab} onChange={setTab} countSampah={trashData?.data?.length} />
           <SearchBar value={search} onChange={setSearch} placeholder="Cari desa..." />
         </div>
+        {bulk.bar}
         {tab === "aktif" ? (
           <DataTable
+            selection={bulk.selection}
             columns={aktifColumns}
             rows={rows}
             loading={loading}
@@ -310,6 +327,7 @@ export function DesaList() {
           />
         ) : (
           <DataTable
+            selection={bulk.selection}
             columns={sampahColumns}
             rows={trashRows}
             loading={trashLoading}
@@ -317,6 +335,8 @@ export function DesaList() {
           />
         )}
       </Card>
+
+      {bulk.dialog}
 
       <Drawer
         open={drawerOpen}

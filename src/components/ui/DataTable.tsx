@@ -10,6 +10,40 @@ export type Column<T> = {
   sortValue?: (row: T) => string | number | null | undefined;
 };
 
+/** Pilihan baris (checkbox). Baris diidentifikasi lewat properti `id`. */
+export type TableSelection = {
+  selected: Set<number>;
+  onChange: (next: Set<number>) => void;
+};
+
+const rowId = (row: unknown) => Number((row as { id: number }).id);
+
+function HeaderCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+  title,
+}: {
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: () => void;
+  title: string;
+}) {
+  return (
+    <input
+      type="checkbox"
+      title={title}
+      aria-label={title}
+      checked={checked}
+      ref={(el) => {
+        if (el) el.indeterminate = indeterminate;
+      }}
+      onChange={onChange}
+      className="w-4 h-4 accent-primary cursor-pointer align-middle"
+    />
+  );
+}
+
 export function DataTable<T>({
   columns,
   rows,
@@ -18,6 +52,7 @@ export function DataTable<T>({
   onRowClick,
   pageSize = 10,
   paginate = true,
+  selection,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -26,6 +61,8 @@ export function DataTable<T>({
   onRowClick?: (row: T) => void;
   pageSize?: number;
   paginate?: boolean;
+  /** Aktifkan kolom checkbox untuk aksi massal */
+  selection?: TableSelection;
 }) {
   const [sortIdx, setSortIdx] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -61,12 +98,42 @@ export function DataTable<T>({
   const from = total === 0 ? 0 : (curPage - 1) * pageSize + 1;
   const to = Math.min(curPage * pageSize, total);
 
+  // Checkbox header = pilih/lepas SEMUA baris hasil filter (lintas halaman)
+  const allIds = selection ? sorted.map(rowId) : [];
+  const nSel = selection ? allIds.filter((id) => selection.selected.has(id)).length : 0;
+  const allChecked = allIds.length > 0 && nSel === allIds.length;
+  function toggleAll() {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    if (allChecked) allIds.forEach((id) => next.delete(id));
+    else allIds.forEach((id) => next.add(id));
+    selection.onChange(next);
+  }
+  function toggleOne(id: number) {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    selection.onChange(next);
+  }
+  const colCount = columns.length + (selection ? 1 : 0);
+
   return (
     <div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800">
+              {selection && (
+                <th className="w-10 pl-4 pr-1 py-3">
+                  <HeaderCheckbox
+                    checked={allChecked}
+                    indeterminate={nSel > 0 && !allChecked}
+                    onChange={toggleAll}
+                    title={allChecked ? "Batalkan semua pilihan" : `Pilih semua (${allIds.length})`}
+                  />
+                </th>
+              )}
               {columns.map((c, i) => (
                 <th
                   key={i}
@@ -95,34 +162,49 @@ export function DataTable<T>({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-12 text-slate-400">
+                <td colSpan={colCount} className="text-center py-12 text-slate-400">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                   Memuat data...
                 </td>
               </tr>
             ) : pageRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-12 text-slate-400">
+                <td colSpan={colCount} className="text-center py-12 text-slate-400">
                   <Inbox className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   {empty}
                 </td>
               </tr>
             ) : (
-              pageRows.map((row, ri) => (
+              pageRows.map((row, ri) => {
+                const id = selection ? rowId(row) : 0;
+                const isSel = !!selection && selection.selected.has(id);
+                return (
                 <tr
                   key={ri}
                   onClick={() => onRowClick?.(row)}
                   className={`border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-darkcard/60 ${
                     onRowClick ? "cursor-pointer" : ""
-                  }`}
+                  } ${isSel ? "bg-primary/5 dark:bg-primary/10" : ""}`}
                 >
+                  {selection && (
+                    <td className="w-10 pl-4 pr-1 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label="Pilih baris"
+                        checked={isSel}
+                        onChange={() => toggleOne(id)}
+                        className="w-4 h-4 accent-primary cursor-pointer align-middle"
+                      />
+                    </td>
+                  )}
                   {columns.map((c, ci) => (
                     <td key={ci} className={`px-4 py-3 dark:text-slate-200 ${c.className || ""}`}>
                       {c.cell(row)}
                     </td>
                   ))}
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

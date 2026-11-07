@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Egg, Plus, RotateCcw, Pencil, Trash2 } from "lucide-react";
 import { PageHeader, Card, Badge, Button, SearchBar, Select, LABEL_VALIDASI, RowActions, IconAction } from "@/components/ui/primitives";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useBulkActions } from "@/components/ui/BulkActions";
 import { Drawer, TabsAktifSampah } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
@@ -125,6 +126,16 @@ export function PendampinganList({
     return matchSearch && matchValidasi;
   });
 
+  const bulk = useBulkActions({
+    entity: "pendampingan",
+    tab,
+    rows,
+    enabled: canEdit,
+    canPurge: role === "admin",
+    onDone: reloadAll,
+    noun: "data pendampingan",
+  });
+
   const baseColumns: Column<PendampinganRow>[] = [
     { header: "Tanggal", sortValue: (r) => r.tanggal, cell: (r) => <span className="whitespace-nowrap">{formatTanggal(r.tanggal)}</span> },
     {
@@ -212,6 +223,9 @@ export function PendampinganList({
       cell: (r) => (
         <RowActions>
           <IconAction icon={RotateCcw} title="Pulihkan" tone="success" onClick={() => doRestore(r.id)} />
+          {role === "admin" && (
+            <IconAction icon={Trash2} title="Hapus Permanen" tone="danger" onClick={() => bulk.purgeOne(r.id)} />
+          )}
         </RowActions>
       ),
     },
@@ -265,13 +279,17 @@ export function PendampinganList({
             <SearchBar value={search} onChange={setSearch} placeholder="Cari balita, pendamping, OTA, keterangan..." />
           </div>
         </div>
+        {bulk.bar}
         <DataTable
+          selection={bulk.selection}
           columns={tab === "aktif" ? aktifColumns : sampahColumns}
           rows={rows}
           loading={loading}
           empty={tab === "aktif" ? "Belum ada data pendampingan" : "Sampah kosong"}
         />
       </Card>
+
+      {bulk.dialog}
 
       <Drawer
         open={drawerOpen}

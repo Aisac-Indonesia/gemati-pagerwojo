@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Plus, HeartPulse, Pencil, Trash2 } from "lucide-react";
+import { Plus, HeartPulse, Pencil, Trash2, RotateCcw } from "lucide-react";
 import {
   PageHeader, StatCard, SearchBar, Button, Field, Input, Select, Card,
   IconAction, RowActions,
 } from "@/components/ui/primitives";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useBulkActions } from "@/components/ui/BulkActions";
+import { TabsAktifSampah } from "@/components/ui/Drawer";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DataToolbar } from "@/components/ui/DataToolbar";
@@ -19,17 +21,42 @@ type DesaOpt = { id: number; nama: string };
 export function PosyanduList() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const { data, loading, reload } = useList<{ data: Row[]; total: number }>("/api/posyandu?pageSize=500");
+  const [tab, setTab] = useState<"aktif" | "sampah">("aktif");
+  const { data, loading, reload: reloadAktif } = useList<{ data: Row[]; total: number }>("/api/posyandu?pageSize=500");
+  const { data: trashData, loading: trashLoading, reload: reloadTrash } = useList<{ data: Row[] }>(
+    "/api/posyandu/trashed?pageSize=200"
+  );
+  function reload() {
+    reloadAktif();
+    reloadTrash();
+  }
   const [desaOpts, setDesaOpts] = useState<DesaOpt[]>([]);
 
   useEffect(() => {
     apiFetch<DesaOpt[]>("/api/desa").then((r) => r.data && setDesaOpts(r.data));
   }, []);
 
-  const rows = (data?.data || []).filter((r) => {
+  const rows = ((tab === "aktif" ? data?.data : trashData?.data) || []).filter((r) => {
     const q = search.toLowerCase();
     return !q || r.nama.toLowerCase().includes(q) || (r.desa_nama || "").toLowerCase().includes(q);
   });
+
+  const bulk = useBulkActions({
+    entity: "posyandu",
+    tab,
+    rows,
+    enabled: true,
+    canPurge: true,
+    onDone: reload,
+    noun: "posyandu",
+    purgeWarning: "Posyandu yang masih dipakai data balita akan dilewati.",
+  });
+
+  async function doRestore(id: number) {
+    const res = await apiFetch(`/api/posyandu/${id}/restore`, { method: "PATCH" });
+    if (res.ok) { toast("Data berhasil dipulihkan"); reload(); }
+    else toast(res.message || "Gagal", "error");
+  }
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -68,7 +95,7 @@ export function PosyanduList() {
 
   async function doDelete(id: number) {
     const res = await apiFetch(`/api/posyandu/${id}`, { method: "DELETE" });
-    if (res.ok) { toast("Data berhasil dihapus"); reload(); }
+    if (res.ok) { toast("Data dipindahkan ke sampah"); reload(); }
     else toast(res.message || "Gagal", "error");
     setDelId(null);
   }
@@ -89,12 +116,18 @@ export function PosyanduList() {
     { header: "Desa", sortValue: (r) => r.desa_nama || "", cell: (r) => r.desa_nama || "-" },
     {
       header: "Aksi",
-      cell: (r) => (
-        <RowActions>
-          <IconAction icon={Pencil} title="Edit" tone="primary" onClick={() => openEdit(r)} />
-          <IconAction icon={Trash2} title="Hapus" tone="danger" onClick={() => setDelId(r.id)} />
-        </RowActions>
-      ),
+      cell: (r) =>
+        tab === "aktif" ? (
+          <RowActions>
+            <IconAction icon={Pencil} title="Edit" tone="primary" onClick={() => openEdit(r)} />
+            <IconAction icon={Trash2} title="Hapus" tone="danger" onClick={() => setDelId(r.id)} />
+          </RowActions>
+        ) : (
+          <RowActions>
+            <IconAction icon={RotateCcw} title="Pulihkan" tone="success" onClick={() => doRestore(r.id)} />
+            <IconAction icon={Trash2} title="Hapus Permanen" tone="danger" onClick={() => bulk.purgeOne(r.id)} />
+          </RowActions>
+        ),
     },
   ];
 
@@ -128,10 +161,18 @@ export function PosyanduList() {
       </div>
 
       <Card className="p-4">
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <TabsAktifSampah value={tab} onChange={setTab} countSampah={trashData?.data?.length} />
           <SearchBar value={search} onChange={setSearch} placeholder="Cari posyandu atau desa..." />
         </div>
-        <DataTable columns={columns} rows={rows} loading={loading} empty="Belum ada posyandu" />
+        {bulk.bar}
+        <DataTable
+          selection={bulk.selection}
+          columns={columns}
+          rows={rows}
+          loading={tab === "aktif" ? loading : trashLoading}
+          empty={tab === "aktif" ? "Belum ada posyandu" : "Sampah kosong"}
+        />
       </Card>
 
       <Modal
@@ -165,10 +206,11 @@ export function PosyanduList() {
         onClose={() => setDelId(null)}
         onConfirm={() => delId !== null && doDelete(delId)}
         title="Hapus Posyandu"
-        message="Yakin ingin menghapus posyandu ini?"
+        message="Pindahkan posyandu ini ke Sampah? Data dapat dipulihkan dari tab Sampah."
         danger
         confirmLabel="Hapus"
       />
+      {bulk.dialog}
     </div>
   );
 }
