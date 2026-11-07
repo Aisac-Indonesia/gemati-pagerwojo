@@ -35,6 +35,9 @@ type Pendampingan = {
   hari_ke?: number | null;
   jumlah_butir?: number | null;
   makan_telur: boolean;
+  sasaran_genting?: boolean | null;
+  bantuan_genting?: string | null;
+  nama_ota?: string | null;
   nama_pendamping?: string | null;
   keterangan?: string | null;
   validasi_status: string;
@@ -288,6 +291,8 @@ export function BalitaDetail({ id }: { id: number }) {
                     <div className="text-xs text-slate-500 truncate">
                       {p.makan_telur ? `${p.jumlah_butir ?? 0} butir` : "Tidak makan"}
                       {p.nama_pendamping ? ` · ${p.nama_pendamping}` : ""}
+                      {p.nama_ota ? ` · OTA: ${p.nama_ota}` : ""}
+                      {p.sasaran_genting ? ` · GENTING${p.bantuan_genting ? `: ${p.bantuan_genting}` : ""}` : ""}
                       {p.keterangan ? ` · ${p.keterangan}` : ""}
                     </div>
                   </div>

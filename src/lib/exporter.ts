@@ -2,6 +2,7 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { normalizeDateInput, normalizeTimeInput } from "@/lib/utils";
 
 export type ExportCol = { key: string; header: string };
 export type ImportField = {
@@ -10,11 +11,15 @@ export type ImportField = {
   required?: boolean;
   example?: string;
   hint?: string;
+  /** "date" → dinormalisasi ke YYYY-MM-DD (serial Excel, DD/MM/YYYY, dll); "time" → HH:MM */
+  type?: "text" | "date" | "time";
 };
 
 function valueOf(row: any, key: string): string {
   const v = key.split(".").reduce((o, k) => (o == null ? o : o[k]), row);
-  return v == null ? "" : String(v);
+  if (v == null) return "";
+  if (typeof v === "boolean") return v ? "Ya" : "Tidak";
+  return String(v);
 }
 
 function downloadBlob(content: BlobPart, name: string, type: string) {
@@ -99,13 +104,21 @@ export async function parseImportFile(
   const ws = wb.Sheets[wb.SheetNames[0]];
   const raw: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
 
-  // Map header spreadsheet -> field.key (cocokkan by header ternormalisasi)
-  const byNorm = new Map(fields.map((f) => [normHeader(f.header), f.key]));
+  // Map header spreadsheet -> field (cocokkan by header ternormalisasi)
+  const byNorm = new Map(fields.map((f) => [normHeader(f.header), f]));
   return raw.map((r) => {
     const out: Record<string, any> = {};
     for (const [h, v] of Object.entries(r)) {
-      const key = byNorm.get(normHeader(h));
-      if (key) out[key] = typeof v === "string" ? v.trim() : v;
+      const f = byNorm.get(normHeader(h));
+      if (!f) continue;
+      let val: any = typeof v === "string" ? v.trim() : v;
+      if (val !== "" && val != null) {
+        // Excel menyimpan tanggal/jam sebagai angka serial → ubah ke teks standar.
+        // Bila tak dikenali, biarkan apa adanya agar server memberi pesan error yang jelas.
+        if (f.type === "date") val = normalizeDateInput(val) ?? val;
+        else if (f.type === "time") val = normalizeTimeInput(val) ?? val;
+      }
+      out[f.key] = val;
     }
     return out;
   });

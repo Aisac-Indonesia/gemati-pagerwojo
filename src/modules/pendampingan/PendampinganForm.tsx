@@ -14,6 +14,9 @@ type PendampinganDetail = {
   jam: string | null;
   makan_telur: boolean;
   jumlah_butir: number | null;
+  sasaran_genting: boolean | null;
+  bantuan_genting: string | null;
+  nama_ota: string | null;
   nama_pendamping: string | null;
   keterangan: string | null;
   foto_dokumentasi: string | null;
@@ -47,6 +50,9 @@ export function PendampinganForm({
     makan_telur: true,
     butirMode: "1" as "1" | "2" | "lainnya",
     butirLain: "",
+    sasaran_genting: false,
+    bantuan_genting: "",
+    nama_ota: "",
     nama_pendamping: namaPendamping,
     keterangan: "",
   });
@@ -75,6 +81,9 @@ export function PendampinganForm({
           makan_telur: !!r.makan_telur,
           butirMode: butir === 1 ? "1" : butir === 2 ? "2" : butir != null ? "lainnya" : "1",
           butirLain: butir != null && butir !== 1 && butir !== 2 ? String(butir) : "",
+          sasaran_genting: !!r.sasaran_genting,
+          bantuan_genting: r.bantuan_genting || "",
+          nama_ota: r.nama_ota || "",
           nama_pendamping: r.nama_pendamping || "",
           keterangan: r.keterangan || "",
         });
@@ -116,6 +125,8 @@ export function PendampinganForm({
   async function save() {
     if (!form.balita_id) return toast("Pilih balita terlebih dahulu", "error");
     if (!form.tanggal) return toast("Tanggal wajib diisi", "error");
+    if (form.sasaran_genting && !form.bantuan_genting.trim())
+      return toast("Isi bantuan GENTING yang diterima/dibutuhkan", "error");
 
     let jumlah_butir: number | null = null;
     if (form.makan_telur) {
@@ -129,6 +140,9 @@ export function PendampinganForm({
       jam: form.jam || null,
       makan_telur: form.makan_telur,
       jumlah_butir,
+      sasaran_genting: form.sasaran_genting,
+      bantuan_genting: form.sasaran_genting ? form.bantuan_genting.trim() || null : null,
+      nama_ota: form.nama_ota.trim() || null,
       nama_pendamping: form.nama_pendamping || null,
       keterangan: form.keterangan || null,
       foto_dokumentasi: foto || null,
@@ -257,6 +271,53 @@ export function PendampinganForm({
           </div>
         </Field>
       )}
+
+      <Field label="Apakah sasaran GENTING?">
+        <div className="flex gap-3">
+          {[
+            { v: true, label: "Ya" },
+            { v: false, label: "Tidak" },
+          ].map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => set("sasaran_genting", opt.v)}
+              className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition ${
+                form.sasaran_genting === opt.v
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-darkcard"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-xs text-slate-400">GENTING = Gerakan Orang Tua Asuh Cegah Stunting</p>
+      </Field>
+
+      {form.sasaran_genting && (
+        <Field label="Bantuan GENTING apa?" required>
+          <Input
+            list="opsi-bantuan-genting"
+            value={form.bantuan_genting}
+            onChange={(e) => set("bantuan_genting", e.target.value)}
+            placeholder="Contoh: bantuan nutrisi / sanitasi / edukasi"
+          />
+          <datalist id="opsi-bantuan-genting">
+            <option value="Bantuan nutrisi (makanan bergizi)" />
+            <option value="Bantuan non-nutrisi (sanitasi / air bersih / rumah layak)" />
+            <option value="Edukasi & pendampingan keluarga" />
+          </datalist>
+        </Field>
+      )}
+
+      <Field label="Nama OTA">
+        <Input
+          value={form.nama_ota}
+          onChange={(e) => set("nama_ota", e.target.value)}
+          placeholder="Masukkan nama Orang Tua Asuh"
+        />
+      </Field>
 
       <Field label="Nama Pendamping">
         <Input

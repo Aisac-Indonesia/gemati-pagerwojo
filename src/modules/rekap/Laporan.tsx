@@ -81,6 +81,8 @@ export function Laporan() {
     { header: "Balita", sortValue: (r) => r.balita_nama ?? r.nama ?? "", cell: (r) => r.balita_nama ?? r.nama ?? `#${r.balita_id}` },
     { header: "Hari", sortValue: (r) => r.hari_ke ?? 0, cell: (r) => r.hari_ke ?? "-" },
     { header: "Makan Telur", cell: (r) => (r.makan_telur ? `Ya${r.jumlah_butir ? ` (${r.jumlah_butir} butir)` : ""}` : "Tidak") },
+    { header: "GENTING", sortValue: (r) => (r.sasaran_genting ? 1 : 0), cell: (r) => (r.sasaran_genting ? `Ya${r.bantuan_genting ? ` (${r.bantuan_genting})` : ""}` : "-") },
+    { header: "OTA", sortValue: (r) => r.nama_ota ?? "", cell: (r) => r.nama_ota ?? "-" },
     { header: "Pendamping", sortValue: (r) => r.nama_pendamping ?? r.kader_nama ?? "", cell: (r) => r.nama_pendamping ?? r.kader_nama ?? "-" },
     { header: "Validasi", sortValue: (r) => r.validasi_status ?? "", cell: (r) => <Badge tone={validasiTone[r.validasi_status] || "default"}>{r.validasi_status ?? "-"}</Badge> },
   ];

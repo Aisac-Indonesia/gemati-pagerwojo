@@ -20,6 +20,9 @@ const EXPORT_COLUMNS = [
   { key: "makan_telur", header: "Makan Telur" },
   { key: "jam", header: "Jam" },
   { key: "nama_pendamping", header: "Pendamping" },
+  { key: "nama_ota", header: "Nama OTA" },
+  { key: "sasaran_genting", header: "Sasaran GENTING" },
+  { key: "bantuan_genting", header: "Bantuan GENTING" },
   { key: "keterangan", header: "Keterangan" },
   { key: "validasi_status", header: "Validasi" },
 ];
@@ -32,6 +35,9 @@ export type PendampinganRow = {
   jam: string | null;
   makan_telur: boolean;
   jumlah_butir: number | null;
+  sasaran_genting: boolean | null;
+  bantuan_genting: string | null;
+  nama_ota: string | null;
   nama_pendamping: string | null;
   keterangan: string | null;
   validasi_status: string;
@@ -112,6 +118,8 @@ export function PendampinganList({
       !q ||
       (r.balita_nama || "").toLowerCase().includes(q) ||
       (r.nama_pendamping || "").toLowerCase().includes(q) ||
+      (r.nama_ota || "").toLowerCase().includes(q) ||
+      (r.bantuan_genting || "").toLowerCase().includes(q) ||
       (r.keterangan || "").toLowerCase().includes(q);
     const matchValidasi = tab === "sampah" || filterValidasi === "all" || r.validasi_status === filterValidasi;
     return matchSearch && matchValidasi;
@@ -143,8 +151,32 @@ export function PendampinganList({
           <span className="text-slate-500">Tidak</span>
         ),
     },
+    {
+      header: "GENTING",
+      sortValue: (r) => (r.sasaran_genting ? 1 : 0),
+      cell: (r) =>
+        r.sasaran_genting ? (
+          <div>
+            <Badge tone="genting">Sasaran GENTING</Badge>
+            {r.bantuan_genting && (
+              <div className="text-xs text-slate-500 mt-1 line-clamp-2 max-w-[200px]">{r.bantuan_genting}</div>
+            )}
+          </div>
+        ) : (
+          <span className="text-slate-400">-</span>
+        ),
+    },
     { header: "Jam", cell: (r) => r.jam || "-" },
-    { header: "Pendamping", cell: (r) => r.nama_pendamping || "-" },
+    {
+      header: "Pendamping",
+      sortValue: (r) => r.nama_pendamping || "",
+      cell: (r) => (
+        <div>
+          <div>{r.nama_pendamping || "-"}</div>
+          {r.nama_ota && <div className="text-xs text-slate-400">OTA: {r.nama_ota}</div>}
+        </div>
+      ),
+    },
     {
       header: "Keterangan",
       cell: (r) => <span className="text-slate-500 line-clamp-2 max-w-[220px] inline-block">{r.keterangan || "-"}</span>,
@@ -230,7 +262,7 @@ export function PendampinganList({
                 <option value="ditolak">Ditolak</option>
               </Select>
             )}
-            <SearchBar value={search} onChange={setSearch} placeholder="Cari balita, pendamping, keterangan..." />
+            <SearchBar value={search} onChange={setSearch} placeholder="Cari balita, pendamping, OTA, keterangan..." />
           </div>
         </div>
         <DataTable

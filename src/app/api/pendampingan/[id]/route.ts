@@ -24,6 +24,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     const session = await requireAuth(["kader", "admin"]);
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
+    if (body?.sasaran_genting === true && !String(body.bantuan_genting ?? "").trim())
+      return bad("Bantuan GENTING wajib diisi bila sasaran GENTING = Ya");
     try {
       const row = await updatePendampingan(Number(id), body);
       await logAudit({

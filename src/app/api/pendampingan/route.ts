@@ -31,6 +31,9 @@ const schema = z.object({
   jam: z.string().nullable().optional(),
   makan_telur: z.boolean(),
   jumlah_butir: z.number().nullable().optional(),
+  sasaran_genting: z.boolean().optional(),
+  bantuan_genting: z.string().nullable().optional(),
+  nama_ota: z.string().nullable().optional(),
   nama_pendamping: z.string().nullable().optional(),
   keterangan: z.string().nullable().optional(),
   foto_dokumentasi: z.string().nullable().optional(),
@@ -44,6 +47,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const parsed = schema.safeParse(body);
     if (!parsed.success) return bad("Data tidak valid");
+    if (parsed.data.sasaran_genting && !parsed.data.bantuan_genting?.trim())
+      return bad("Bantuan GENTING wajib diisi bila sasaran GENTING = Ya");
     try {
       const namaPendamping = parsed.data.nama_pendamping?.trim() || session.nama;
       const row = await createPendampingan(parsed.data, session.id, namaPendamping);

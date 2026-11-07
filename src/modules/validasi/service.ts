@@ -56,6 +56,7 @@ export async function listValidasi(session: SessionUser, opts: { status?: string
             jumlah: pendampingan.jumlah_butir,
             kader_id: pendampingan.kader_id,
             nama_pendamping: pendampingan.nama_pendamping,
+            genting: pendampingan.sasaran_genting,
             validasi: pendampingan.validasi_status,
           })
           .from(pendampingan)
@@ -100,7 +101,7 @@ export async function listValidasi(session: SessionUser, opts: { status?: string
       tipe_key: "pendampingan",
       id: p.id,
       balita_nama: nameOf.get(p.balita_id) || "-",
-      detail: `${p.makan ? `Makan ${p.jumlah ?? 1} butir` : "Tidak makan telur"} · ${kader}`,
+      detail: `${p.makan ? `Makan ${p.jumlah ?? 1} butir` : "Tidak makan telur"}${p.genting ? " · Sasaran GENTING" : ""} · ${kader}`,
       tanggal: p.tanggal || "-",
       kader_nama: kader,
       validasi_status: p.validasi,

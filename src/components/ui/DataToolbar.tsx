@@ -109,7 +109,8 @@ export function DataToolbar({
         body: JSON.stringify({ rows: parsed }),
       });
       if (!res.ok) {
-        toast(res.message || "Import gagal", "error");
+        // Tanpa pesan JSON = biasanya server/proxy timeout atau halaman error HTML → tampilkan kode HTTP
+        toast(res.message || `Import gagal (HTTP ${res.status || "tanpa respons"})`, "error");
         return;
       }
       const d: any = res.data || {};

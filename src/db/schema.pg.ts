@@ -137,6 +137,9 @@ export const pendampingan = pgTable(
     jam: varchar("jam", { length: 8 }),
     makan_telur: boolean("makan_telur").notNull().default(true),
     jumlah_butir: integer("jumlah_butir"),
+    sasaran_genting: boolean("sasaran_genting").notNull().default(false), // sasaran GENTING (Gerakan Orang Tua Asuh Cegah Stunting)?
+    bantuan_genting: text("bantuan_genting"), // bantuan GENTING yang diterima/dibutuhkan
+    nama_ota: varchar("nama_ota", { length: 150 }), // nama OTA (Orang Tua Asuh)
     kader_id: integer("kader_id"),
     nama_pendamping: varchar("nama_pendamping", { length: 150 }),
     keterangan: text("keterangan"),

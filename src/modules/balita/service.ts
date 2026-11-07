@@ -5,7 +5,16 @@ import { combine, softDeleteCond, paginate } from "@/lib/query";
 import { insertReturning, updateByIdReturning } from "@/db/repo";
 import { hitungUmur } from "@/lib/utils";
 import { encryptPII, decryptPII, blindIndex } from "@/lib/crypto";
-import { runImport, createLookups, req, type ImportResult } from "@/modules/shared/import";
+import {
+  runImportBatched,
+  createLookups,
+  createBalitaLookup,
+  req,
+  reqDate,
+  optText,
+  optPhone,
+  type ImportResult,
+} from "@/modules/shared/import";
 import type { SessionUser } from "@/lib/session";
 
 export type BalitaInput = {
@@ -153,10 +162,9 @@ async function assertDesaValid(desaId: number) {
   if (!rows[0]) throw new Error("Desa tidak valid");
 }
 
-export async function createBalita(input: BalitaInput, kaderId?: number | null) {
-  await assertDesaValid(input.desa_id);
-
-  const rows = await insertReturning(balita, {
+/** Bentuk row insert balita (PII dienkripsi at-rest) — dipakai form & import massal. */
+function toBalitaRow(input: BalitaInput, kaderId?: number | null) {
+  return {
     nik: encryptPII(input.nik)!, // enkripsi PII at-rest
     nik_hash: blindIndex(input.nik),
     nama: input.nama,
@@ -176,7 +184,12 @@ export async function createBalita(input: BalitaInput, kaderId?: number | null) 
     foto: input.foto ?? null,
     status: input.status ?? "aktif",
     validasi_status: "menunggu",
-  });
+  };
+}
+
+export async function createBalita(input: BalitaInput, kaderId?: number | null) {
+  await assertDesaValid(input.desa_id);
+  const rows = await insertReturning(balita, toBalitaRow(input, kaderId));
   return rows[0];
 }
 
@@ -227,40 +240,79 @@ export async function listPosyanduOpsi(desaId?: number) {
   return q.orderBy(posyandu.nama);
 }
 
-/** Import massal balita dari Excel/CSV. Kolom lihat IMPORT_FIELDS.balita. */
+/**
+ * Import massal balita dari Excel/CSV. Kolom lihat IMPORT_FIELDS.balita.
+ * Dua tahap (validasi semua baris → insert per chunk) agar tidak ada query per baris;
+ * NIK yang sudah terdaftar / ganda di file ditolak supaya import ulang tidak menggandakan data.
+ */
 export async function importBalita(rows: any[], session: SessionUser): Promise<ImportResult> {
-  const lk = await createLookups();
-  return runImport(rows, async (r) => {
-    const nik = req(r, "nik", "NIK");
-    const nama = req(r, "nama", "Nama Balita");
-    const jk = req(r, "jenis_kelamin", "Jenis Kelamin").toUpperCase();
-    if (jk !== "L" && jk !== "P") throw new Error("Jenis Kelamin harus L atau P");
-    const tanggal_lahir = req(r, "tanggal_lahir", "Tanggal Lahir");
-    const nama_ibu = req(r, "nama_ibu", "Nama Ibu");
+  const [lk, existing] = await Promise.all([createLookups(), createBalitaLookup()]);
+  const kaderId = session.role === "kader" ? session.id : null;
 
-    let desa_id = lk.desaId(r.desa);
-    if (session.role !== "admin") desa_id = session.desa_id; // kader/ppkbd dikunci ke desanya
-    if (!desa_id) throw new Error(`Desa "${r.desa || ""}" tidak ditemukan`);
+  // kader/ppkbd dikunci ke desanya — validasi sekali, bukan per baris
+  let desaAkunValid = true;
+  if (session.role !== "admin") {
+    desaAkunValid = !!session.desa_id;
+    if (desaAkunValid) {
+      try {
+        await assertDesaValid(session.desa_id!);
+      } catch {
+        desaAkunValid = false;
+      }
+    }
+  }
 
-    await createBalita(
-      {
-        nik,
-        nama,
-        jenis_kelamin: jk as "L" | "P",
-        tempat_lahir: r.tempat_lahir || null,
-        tanggal_lahir,
-        nama_ayah: r.nama_ayah || null,
-        nama_ibu,
-        no_hp: r.no_hp || null,
-        alamat: r.alamat || null,
-        rt: r.rt || null,
-        rw: r.rw || null,
-        dusun: r.dusun || null,
-        desa_id,
-        posyandu_id: lk.posyanduId(r.posyandu),
-        status: (r.status || "aktif").toLowerCase(),
-      },
-      session.role === "kader" ? session.id : null
-    );
-  });
+  const seenHash = new Set<string>(); // NIK ganda di dalam file yang sama
+
+  return runImportBatched(
+    rows,
+    (r) => {
+      const nik = req(r, "nik", "NIK").replace(/\s+/g, "");
+      const hash = blindIndex(nik)!;
+      if (existing.hasNik(nik)) throw new Error(`NIK ${nik} sudah terdaftar`);
+      if (seenHash.has(hash)) throw new Error(`NIK ${nik} ganda di dalam file`);
+      seenHash.add(hash);
+
+      const nama = req(r, "nama", "Nama Balita");
+      const jk = req(r, "jenis_kelamin", "Jenis Kelamin").toUpperCase();
+      if (jk !== "L" && jk !== "P") throw new Error("Jenis Kelamin harus L atau P");
+      const tanggal_lahir = reqDate(r, "tanggal_lahir", "Tanggal Lahir");
+      const nama_ibu = req(r, "nama_ibu", "Nama Ibu");
+
+      let desa_id: number;
+      if (session.role === "admin") {
+        const found = lk.desaId(optText(r.desa) ?? undefined);
+        if (!found) throw new Error(`Desa "${r.desa || ""}" tidak ditemukan`);
+        desa_id = found;
+      } else {
+        if (!desaAkunValid) throw new Error("Akun Anda belum terhubung ke desa yang valid");
+        desa_id = session.desa_id!;
+      }
+
+      const status = String(r.status || "aktif").trim().toLowerCase();
+      return toBalitaRow(
+        {
+          nik,
+          nama,
+          jenis_kelamin: jk as "L" | "P",
+          tempat_lahir: optText(r.tempat_lahir),
+          tanggal_lahir,
+          nama_ayah: optText(r.nama_ayah),
+          nama_ibu,
+          no_hp: optPhone(r.no_hp),
+          alamat: optText(r.alamat),
+          rt: optText(r.rt),
+          rw: optText(r.rw),
+          dusun: optText(r.dusun),
+          desa_id,
+          posyandu_id: lk.posyanduId(optText(r.posyandu) ?? undefined),
+          status: status === "nonaktif" ? "nonaktif" : "aktif",
+        },
+        kaderId
+      );
+    },
+    async (items) => {
+      await db.insert(balita).values(items);
+    }
+  );
 }

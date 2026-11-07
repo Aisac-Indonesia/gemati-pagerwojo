@@ -5,7 +5,7 @@ import { combine, softDeleteCond, searchCond } from "@/lib/query";
 import { insertReturning, updateByIdReturning } from "@/db/repo";
 import { hitungUmur, umurBulan } from "@/lib/utils";
 import { hitungStatusGizi } from "@/lib/gizi";
-import { runImport, findBalitaIdByNik, req, type ImportResult } from "@/modules/shared/import";
+import { runImportBatched, createBalitaLookup, req, reqDate, type ImportResult } from "@/modules/shared/import";
 import type { SessionUser } from "@/lib/session";
 
 export type PengukuranInput = {
@@ -183,24 +183,38 @@ export async function importPengukuran(
   rows: any[],
   session: SessionUser
 ): Promise<ImportResult> {
-  return runImport(rows, async (r) => {
-    const nik = req(r, "nik", "NIK Balita");
-    const balita_id = await findBalitaIdByNik(nik);
-    if (!balita_id) throw new Error(`NIK ${nik} tidak ditemukan`);
-    const tanggal = req(r, "tanggal", "Tanggal");
-    const berat_badan = numReq(r.berat_badan, "Berat Badan");
-    const tinggi_badan = numReq(r.tinggi_badan, "Tinggi Badan");
+  // Lookup balita sekali query; validasi semua baris dulu, lalu insert per chunk (tanpa query per baris).
+  const lookup = await createBalitaLookup();
+  return runImportBatched(
+    rows,
+    (r) => {
+      const nik = req(r, "nik", "NIK Balita");
+      const balita_id = lookup.idByNik(nik);
+      const b = balita_id ? lookup.byId.get(balita_id) : undefined;
+      if (!balita_id || !b) throw new Error(`NIK ${nik} tidak ditemukan`);
+      const tanggal = reqDate(r, "tanggal", "Tanggal");
+      const berat_badan = numReq(r.berat_badan, "Berat Badan");
+      const tinggi_badan = numReq(r.tinggi_badan, "Tinggi Badan");
 
-    await createPengukuran(
-      {
+      const bulan = umurBulan(b.tanggal_lahir, new Date(tanggal));
+      const gizi = hitungStatusGizi(tinggi_badan, bulan, b.jenis_kelamin as "L" | "P");
+
+      return {
         balita_id,
         tanggal,
         berat_badan,
         tinggi_badan,
         lingkar_kepala: numOrNull(r.lingkar_kepala, "Lingkar Kepala"),
         lingkar_lengan_atas: numOrNull(r.lingkar_lengan_atas, "Lingkar Lengan Atas"),
-      },
-      session.id
-    );
-  });
+        z_score: gizi.z_score,
+        status_gizi: gizi.status_gizi,
+        risiko_stunting: gizi.risiko_stunting,
+        kader_id: session.id,
+        validasi_status: "menunggu",
+      };
+    },
+    async (items) => {
+      await db.insert(pengukuran).values(items);
+    }
+  );
 }

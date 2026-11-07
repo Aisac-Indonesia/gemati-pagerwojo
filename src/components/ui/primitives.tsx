@@ -137,6 +137,7 @@ const badgeStyles: Record<string, string> = {
   ppkbd: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   kpk: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   kader: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  genting: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
   default: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 

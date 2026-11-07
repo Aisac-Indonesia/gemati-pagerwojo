@@ -8,6 +8,7 @@ import { LABEL_VALIDASI } from "@/components/ui/primitives";
 type Pend = {
   id: number; balita_nama?: string; tanggal: string; hari_ke?: number;
   jumlah_butir?: number | null; makan_telur?: boolean; validasi_status: string;
+  sasaran_genting?: boolean | null; nama_ota?: string | null;
 };
 type Peng = {
   id: number; balita_nama?: string; tanggal: string; berat_badan: number;
@@ -83,6 +84,8 @@ export function RiwayatList() {
                     <div className="text-xs text-slate-400">
                       {p.tanggal} · Hari {p.hari_ke ?? "-"} ·{" "}
                       {p.makan_telur ? `${p.jumlah_butir ?? 0} butir` : "Tidak makan"}
+                      {p.sasaran_genting ? " · Sasaran GENTING" : ""}
+                      {p.nama_ota ? ` · OTA: ${p.nama_ota}` : ""}
                     </div>
                   </div>
                 </div>
