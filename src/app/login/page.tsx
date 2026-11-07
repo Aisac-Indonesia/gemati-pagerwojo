@@ -4,11 +4,6 @@ import { useRouter } from "next/navigation";
 import { Egg, User, Lock, Eye, EyeOff, ShieldCheck, Heart } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
-const DEMO = [
-  { label: "Admin Kecamatan", username: "admin", password: "admin123" },
-  { label: "PPKBD Desa", username: "ppkbd.mulyosari", password: "kader123" },
-  { label: "Kader (KPK)", username: "kader.mulyosari01", password: "kader123" },
-];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,10 +38,6 @@ export default function LoginPage() {
     }
   }
 
-  function fillDemo(d: (typeof DEMO)[number]) {
-    setUsername(d.username);
-    setPassword(d.password);
-  }
 
   return (
     <div className="min-h-screen flex">
@@ -179,23 +170,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-            <div className="text-xs font-semibold text-slate-500 mb-2">
-              Akun Demo (klik untuk isi otomatis):
-            </div>
-            <div className="space-y-1.5">
-              {DEMO.map((d) => (
-                <button
-                  key={d.username}
-                  onClick={() => fillDemo(d)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-darkcard text-sm transition"
-                >
-                  <span className="text-slate-700 dark:text-slate-200">{d.label}</span>
-                  <span className="font-mono text-xs text-primary">{d.username}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <p className="text-center text-xs text-slate-400 mt-6">
             © 2025 Pemerintah Kabupaten Tulungagung · Kecamatan Pagerwojo

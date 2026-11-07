@@ -287,6 +287,12 @@ export async function importBalita(rows: any[], session: SessionUser): Promise<I
       } else {
         if (!desaAkunValid) throw new Error("Akun Anda belum terhubung ke desa yang valid");
         desa_id = session.desa_id!;
+        // Cegah balita desa lain tercatat ke desa akun ini: kolom Desa (bila diisi) harus cocok.
+        const desaFile = optText(r.desa);
+        if (desaFile && lk.desaId(desaFile) !== desa_id)
+          throw new Error(
+            `Desa "${desaFile}" bukan desa akun Anda — import oleh admin atau akun desa tersebut`
+          );
       }
 
       const status = String(r.status || "aktif").trim().toLowerCase();
