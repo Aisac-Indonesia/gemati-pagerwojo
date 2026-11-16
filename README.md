@@ -1,5 +1,7 @@
 # GEMATI Pagerwojo
 
+![GEMATI - Sistem Informasi Pendampingan Makan Telur](promo/banner.png)
+
 **Sistem Informasi Pendampingan Makan Telur Cegah Stunting** — Kecamatan Pagerwojo, Kabupaten Tulungagung.
 
 Next.js 15 (App Router) · TypeScript · Tailwind · lucide-react · Drizzle ORM · **multi-database (Neon / PostgreSQL / MySQL)** · Recharts · Leaflet.
@@ -257,3 +259,26 @@ loop/                        # workflow Sainskerta
 ## 11. Standar loop & Audit
 
 Kepatuhan aturan `loop/` didokumentasikan di `architecture-decisions.md`, progres di `progress.md`, dan hasil audit keamanan/performa di `audit-report.md`. Ringkas: modular monolith ✅, no FK ✅, soft delete + restore + trashed ✅, snake_case ✅, migration ✅, backend-first ✅, rate-limit login ✅, enkripsi PII ✅.
+
+---
+
+## 🎨 Brand & Promotion Kit
+
+Aset promosi siap pakai ada di [`promo/`](promo/). Logo **tidak diubah** —
+`logo.png` dan `logo-wordmark.png` dirender persis dari spesifikasi brand yang
+sudah ada di [`dataroom/01-DESIGN-TOKENS.md`](dataroom/01-DESIGN-TOKENS.md)
+(kotak rounded hijau `#2e7d32` + ikon telur lucide `Egg` amber `#FBC02D`).
+
+| Aset | File | Kegunaan |
+| --- | --- | --- |
+| Logo mark | `promo/logo.png` | Ikon / avatar (1024x1024, dari design tokens) |
+| Logo lockup | `promo/logo-wordmark.png` | Docs, kop surat, slide |
+| Software box | `promo/software-box.png` | Render produk 3D |
+| Poster | `promo/poster.png` | Key art / cetak (portrait) |
+| Banner | `promo/banner.png` | Hero wide / header README |
+| Social preview | `promo/social-preview.png` | GitHub/Open Graph (1280x640) |
+| Feature showcase | `promo/feature-showcase.png` | Dashboard, Data Balita, Validasi, Laporan |
+| Social square | `promo/social-square.png` | Post IG / X (1:1) |
+| Video iklan | `promo/gemati-ad-15s.mp4` | Iklan 15 detik 1080p + audio |
+
+Palet brand: hijau `#2e7d32`, amber telur `#FBC02D`, hijau-hitam `#0b140f`.
