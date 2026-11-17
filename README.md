@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="promo/logo.png" alt="Logo GEMATI Pagerwojo — telur emas dilindungi lingkaran daun hijau" width="140">
+</p>
+
 # GEMATI Pagerwojo
 
 ![GEMATI - Sistem Informasi Pendampingan Makan Telur](promo/banner.png)
@@ -262,6 +266,17 @@ Kepatuhan aturan `loop/` didokumentasikan di `architecture-decisions.md`, progre
 
 ---
 
+## 📱 Tampilan Aplikasi
+
+| | |
+|:---:|:---:|
+| **Dashboard Admin** | **Dashboard Kader** |
+| ![Dashboard Admin](dataroom/screenshots/admin/01-dashboard-top.jpg) | ![Dashboard Kader](dataroom/screenshots/kader/01-dashboard-top.jpg) |
+| **Form Pengukuran (Kader)** | **Rekapitulasi (Admin)** |
+| ![Form Pengukuran](dataroom/screenshots/kader/05-pengukuran-form.jpg) | ![Rekapitulasi](dataroom/screenshots/admin/14-rekapitulasi.jpg) |
+
+---
+
 ## 🎨 Brand & Promotion Kit
 
 Aset promosi siap pakai ada di [`promo/`](promo/). Logo **tidak diubah** —
@@ -282,3 +297,9 @@ sudah ada di [`dataroom/01-DESIGN-TOKENS.md`](dataroom/01-DESIGN-TOKENS.md)
 | Video iklan | `promo/gemati-ad-15s.mp4` | Iklan 15 detik 1080p + audio |
 
 Palet brand: hijau `#2e7d32`, amber telur `#FBC02D`, hijau-hitam `#0b140f`.
+
+<p align="center">
+  <img src="promo/software-box.png" alt="Kemasan GEMATI Pagerwojo — krat telur dengan sleve hijau" width="380">
+  &nbsp;&nbsp;
+  <img src="promo/poster.png" alt="Poster GEMATI Pagerwojo — telur emas dan daun" width="380">
+</p>
