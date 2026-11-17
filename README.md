@@ -279,10 +279,11 @@ Kepatuhan aturan `loop/` didokumentasikan di `architecture-decisions.md`, progre
 
 ## 🎨 Brand & Promotion Kit
 
-Aset promosi siap pakai ada di [`promo/`](promo/). Logo **tidak diubah** —
-`logo.png` dan `logo-wordmark.png` dirender persis dari spesifikasi brand yang
-sudah ada di [`dataroom/01-DESIGN-TOKENS.md`](dataroom/01-DESIGN-TOKENS.md)
-(kotak rounded hijau `#2e7d32` + ikon telur lucide `Egg` amber `#FBC02D`).
+Aset promosi siap pakai ada di [`promo/`](promo/). Logo adalah emblem telur emas
+yang dipeluk lingkaran daun hijau dengan garis grafik pertumbuhan — identitas
+visual program makan telur untuk cegah stunting. Paletnya tetap mengikuti
+spesifikasi brand di [`dataroom/01-DESIGN-TOKENS.md`](dataroom/01-DESIGN-TOKENS.md)
+(hijau `#2e7d32` + amber telur `#FBC02D`).
 
 | Aset | File | Kegunaan |
 | --- | --- | --- |
